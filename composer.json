@@ -1,0 +1,35 @@
+{
+    "name": "commnerd/laravel-google-drive-storage-driver",
+    "description": "google-drive storage driver",
+    "type": "library",
+    "require": {
+        "google/apiclient": "^2.4"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^5.1"
+    },
+    "authors": [
+        {
+            "name": "Michael J. Miller",
+            "email": "commnerd@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "GoogleDriveStorage\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "GoogleDriveStorage\\GoogleDriveStorageProvider"
+            ]
+        }
+    }
+}
