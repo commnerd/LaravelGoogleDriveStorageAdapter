@@ -3,6 +3,7 @@
     "description": "google-drive storage driver",
     "type": "library",
     "require": {
+        "php": ">=5.4.0",
         "google/apiclient": "^2.4"
     },
     "require-dev": {

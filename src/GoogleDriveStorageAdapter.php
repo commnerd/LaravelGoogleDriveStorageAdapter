@@ -3,6 +3,7 @@
 namespace GoogleDriveStorage;
 
 use Illuminate\Contracts\Cloud;
+use Cache;
 
 class GoogleDriveStorageAdapter implements Cloud
 {
@@ -20,13 +21,23 @@ class GoogleDriveStorageAdapter implements Cloud
      */
     const VISIBILITY_PRIVATE = 'private';
 
+    private $service;
+
+    public function __construct()
+    {
+        $this->service = new GoogleDriveService();
+    }
+
     /**
      * Determine if a file exists.
      *
      * @param  string  $path
      * @return bool
      */
-    public function exists($path);
+    public function exists($path)
+    {
+        return ($this->getFileObject($path, true) instanceof Google_Service_Drive_DriveFile);
+    }
 
     /**
      * Get the contents of a file.
@@ -36,7 +47,10 @@ class GoogleDriveStorageAdapter implements Cloud
      *
      * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
-    public function get($path);
+    public function get($path)
+    {
+
+    }
 
     /**
      * Get a resource to read the file.
@@ -46,7 +60,10 @@ class GoogleDriveStorageAdapter implements Cloud
      *
      * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
-    public function readStream($path);
+    public function readStream($path)
+    {
+
+    }
 
     /**
      * Write the contents of a file.
@@ -56,7 +73,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  mixed  $options
      * @return bool
      */
-    public function put($path, $contents, $options = []);
+    public function put($path, $contents, $options = [])
+    {
+
+    }
 
     /**
      * Write a new file using a stream.
@@ -69,7 +89,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @throws \InvalidArgumentException If $resource is not a file handle.
      * @throws \Illuminate\Contracts\Filesystem\FileExistsException
      */
-    public function writeStream($path, $resource, array $options = []);
+    public function writeStream($path, $resource, array $options = [])
+    {
+
+    }
 
     /**
      * Get the visibility for the given path.
@@ -77,7 +100,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string  $path
      * @return string
      */
-    public function getVisibility($path);
+    public function getVisibility($path)
+    {
+
+    }
 
     /**
      * Set the visibility for the given path.
@@ -86,7 +112,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string  $visibility
      * @return bool
      */
-    public function setVisibility($path, $visibility);
+    public function setVisibility($path, $visibility)
+    {
+
+    }
 
     /**
      * Prepend to a file.
@@ -104,7 +133,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string  $data
      * @return bool
      */
-    public function append($path, $data);
+    public function append($path, $data)
+    {
+
+    }
 
     /**
      * Delete the file at a given path.
@@ -112,7 +144,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string|array  $paths
      * @return bool
      */
-    public function delete($paths);
+    public function delete($paths)
+    {
+
+    }
 
     /**
      * Copy a file to a new location.
@@ -121,7 +156,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string  $to
      * @return bool
      */
-    public function copy($from, $to);
+    public function copy($from, $to)
+    {
+
+    }
 
     /**
      * Move a file to a new location.
@@ -130,7 +168,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string  $to
      * @return bool
      */
-    public function move($from, $to);
+    public function move($from, $to)
+    {
+
+    }
 
     /**
      * Get the file size of a given file.
@@ -138,7 +179,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string  $path
      * @return int
      */
-    public function size($path);
+    public function size($path)
+    {
+
+    }
 
     /**
      * Get the file's last modification time.
@@ -146,7 +190,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string  $path
      * @return int
      */
-    public function lastModified($path);
+    public function lastModified($path)
+    {
+
+    }
 
     /**
      * Get an array of all files in a directory.
@@ -155,7 +202,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  bool  $recursive
      * @return array
      */
-    public function files($directory = null, $recursive = false);
+    public function files($directory = null, $recursive = false)
+    {
+
+    }
 
     /**
      * Get all of the files from the given directory (recursive).
@@ -163,7 +213,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string|null  $directory
      * @return array
      */
-    public function allFiles($directory = null);
+    public function allFiles($directory = null)
+    {
+
+    }
 
     /**
      * Get all of the directories within a given directory.
@@ -172,7 +225,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  bool  $recursive
      * @return array
      */
-    public function directories($directory = null, $recursive = false);
+    public function directories($directory = null, $recursive = false)
+    {
+
+    }
 
     /**
      * Get all (recursive) of the directories within a given directory.
@@ -180,7 +236,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string|null  $directory
      * @return array
      */
-    public function allDirectories($directory = null);
+    public function allDirectories($directory = null)
+    {
+
+    }
 
     /**
      * Create a directory.
@@ -188,7 +247,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string  $path
      * @return bool
      */
-    public function makeDirectory($path);
+    public function makeDirectory($path)
+    {
+
+    }
 
     /**
      * Recursively delete a directory.
@@ -196,7 +258,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string  $directory
      * @return bool
      */
-    public function deleteDirectory($directory);
+    public function deleteDirectory($directory)
+    {
+
+    }
 
     /**
      * Get the URL for the file at the given path.
@@ -204,5 +269,8 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string  $path
      * @return string
      */
-    public function url($path);
+    public function url($path)
+    {
+
+    }
 }
