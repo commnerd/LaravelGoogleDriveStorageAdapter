@@ -8,11 +8,8 @@ class GoogleDriveService extends Google_Service_Drive
 {
     private $client;
 
-    public function __construct()
+    public function __construct(GoogleClient $client)
     {
-        $this->client = new GoogleClient();
-        $this->client->setClientId($this->ClientId);
-        $this->client->setClientSecret($this->ClientSecret);
-        $this->client->refreshToken($this->refreshToken);
+        $this->client = $client;
     }
 }

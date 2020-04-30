@@ -45,9 +45,13 @@ class GoogleClient extends ProprietaryGoogleClient
 
             // Setting api_format_v2 will return more detailed error messages
             // from certain APIs.
-            'api_format_v2' => false
+	    'api_format_v2' => false,
+
+	    'use_application_default_credentials' => true,
         ]);
 
-        $this->accessToken = $this->fetchAccessTokenWithRefreshToken(config('refreshToken'));
+        $config = config('filesystems.disks.google_drive');
+
+        $this->accessToken = $this->fetchAccessTokenWithRefreshToken($config['refreshToken']);
     }
 }

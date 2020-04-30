@@ -22,9 +22,9 @@ class GoogleDriveStorageAdapter
 
     private $service;
 
-    public function __construct()
+    public function __construct(GoogleDriveService $service)
     {
-        $this->service = new GoogleDriveService();
+        $this->service = $service;
     }
 
     /**
