@@ -2,10 +2,9 @@
 
 namespace GoogleDriveStorage;
 
-use Illuminate\Contracts\Cloud;
 use Cache;
 
-class GoogleDriveStorageAdapter implements Cloud
+class GoogleDriveStorageAdapter
 {
     /**
      * The public visibility setting.
@@ -124,7 +123,10 @@ class GoogleDriveStorageAdapter implements Cloud
      * @param  string  $data
      * @return bool
      */
-    public function prepend($path, $data);
+    public function prepend($path, $data)
+    {
+
+    }
 
     /**
      * Append to a file.
