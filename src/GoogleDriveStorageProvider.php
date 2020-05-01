@@ -18,6 +18,16 @@ class GoogleDriveStorageProvider extends ServiceProvider
         //     __DIR__.'/../config/storage_google_drive.php' => config_path('storage_google_drive.php'),
         // ], 'config');
 
+        app()->config["filesystems.disks.google_drive"] = [
+            'driver' => 'google_drive',
+            'refresh_token' => null,
+            "client_id" => null,
+            "client_secret" => null,
+            "root" => null,
+        ];
+
+        app()->config["filesystems.default"] = "google_drive";
+
         $this->app->singleton(GoogleClient::class, function ($app) {
             return new GoogleClient();
         });
@@ -27,12 +37,10 @@ class GoogleDriveStorageProvider extends ServiceProvider
         });
 
         Storage::extend('google_drive', function () {
-            return new GoogleDriveStorageAdapter(app()->make(GoogleDriveService::class));
+            return new GoogleDriveStorageAdapter(
+                app()->make(GoogleDriveService::class),
+                app()->config
+            );
         });
-
-        app()->config["filesystems.disks.google_drive"] = [
-            'driver' => 'google_drive',
-            'refreshToken' => "1234567890",
-        ];
     }
 }

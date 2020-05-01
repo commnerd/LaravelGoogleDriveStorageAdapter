@@ -2,56 +2,43 @@
 
 namespace GoogleDriveStorage;
 
-use Google_Service_Drive;
 use Google_Client as ProprietaryGoogleClient;
+use Google_Service_Drive;
+use Cache;
 
 class GoogleClient extends ProprietaryGoogleClient
 {
-    public $accessToken;
+    const TOKEN_KEY = "storage_google_drive_refresh_token";
+
+    private $config;
 
     public function __construct()
     {
+        $this->config = config('filesystems.disks.google_drive');
+
         parent::__construct([
-            'application_name' => '',
+            'application_name' => config("app.name"),
 
             // https://developers.google.com/console
-            'client_id' => '',
-            'client_secret' => '',
-            'redirect_uri' => null,
-            'state' => null,
-
-            // Simple API access key, also from the API console. Ensure you get
-            // a Server key, and not a Browser key.
-            'developer_key' => '',
+            'client_id' => $this->config["client_id"],
+            'client_secret' => $this->config["client_secret"],
 
             // Other OAuth2 parameters.
             'include_granted_scopes' => [Google_Service_Drive::DRIVE],
-
-            // Task Runner retry configuration
-            // @see Google_Task_Runner
-            'retry' => array(),
-            'retry_map' => null,
-
-            // cache config for downstream auth caching
-            'cache_config' => [],
-
-            // function to be called when an access token is fetched
-            // follows the signature function ($cacheKey, $accessToken)
-            'token_callback' => null,
-
-            // Service class used in Google_Client::verifyIdToken.
-            // Explicitly pass this in to avoid setting JWT::$leeway
-            'jwt' => null,
-
-            // Setting api_format_v2 will return more detailed error messages
-            // from certain APIs.
-	    'api_format_v2' => false,
-
-	    'use_application_default_credentials' => true,
+            'api_format_v2' => true,
         ]);
 
-        $config = config('filesystems.disks.google_drive');
-
-        $this->accessToken = $this->fetchAccessTokenWithRefreshToken($config['refreshToken']);
+        $this->setAccessToken($this->getToken());
     }
+
+    private function getToken() {
+        $token = Cache::get(self::TOKEN_KEY);
+        if(isset($token)) {
+            return $token;
+        }
+        $token = $this->fetchAccessTokenWithRefreshToken($this->config['refresh_token']);
+        Cache::put(self::TOKEN_KEY, $token, $token["expires_in"]);
+        return $token;
+    }
+
 }

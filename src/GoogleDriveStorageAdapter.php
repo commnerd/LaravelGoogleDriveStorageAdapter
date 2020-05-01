@@ -2,29 +2,33 @@
 
 namespace GoogleDriveStorage;
 
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Config\Repository as Config;
 use Cache;
 
-class GoogleDriveStorageAdapter
+class GoogleDriveStorageAdapter implements Filesystem
 {
-    /**
-     * The public visibility setting.
-     *
-     * @var string
-     */
-    const VISIBILITY_PUBLIC = 'public';
+    const CACHE_KEY = "storage_google_drive_drive_map";
 
-    /**
-     * The private visibility setting.
-     *
-     * @var string
-     */
-    const VISIBILITY_PRIVATE = 'private';
+    const CONFIG_KEY = "filesystems.disks.google_drive";
 
+    private $directoryMap;
+    private $fileMap;
     private $service;
+    private $config;
 
-    public function __construct(GoogleDriveService $service)
+    public function __construct(GoogleDriveService $service, Config $config)
     {
+        $this->config = $config[self::CONFIG_KEY];
         $this->service = $service;
+
+        $this->directoryMap = Cache::get(self::CACHE_KEY) ?? array_flip($this->allDirectories());
+        $this->fileMap = Cache::get(self::CACHE_KEY) ?? array_flip($this->allFiles());
+    }
+
+    public function __destruct()
+    {
+        Cache::put(self::CACHE_KEY, array_flip($this->directoryMap));
     }
 
     /**
@@ -35,7 +39,12 @@ class GoogleDriveStorageAdapter
      */
     public function exists($path)
     {
-        return ($this->getFileObject($path, true) instanceof Google_Service_Drive_DriveFile);
+        foreach($this->files() as $file) {
+            if($path === $file->getName()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -206,7 +215,36 @@ class GoogleDriveStorageAdapter
      */
     public function files($directory = null, $recursive = false)
     {
+        $path = $directory;
 
+        if(is_null($directory)) {
+            $directory = $this->config["root"];
+        }
+        else {
+            $directory = $this->directoryMap[$directory];
+        }
+
+        $list = array();
+
+        $optParams = array(
+            'q' => sprintf("'%s' in parents and mimeType != '%s'", $directory, "application/vnd.google-apps.folder"),
+        );
+
+        $files = $this->service->files->listFiles($optParams)->getFiles();
+
+        foreach($files as $file) {
+            $list[$file->getId()] = $file->getName();
+        }
+
+        if($recursive) {
+            foreach(array_keys($this->directoryMap) as $subDir) {
+                foreach($this->files($subDir) as $fileKey => $fileName) {
+                    $list[$fileKey] = $subDir."/".$fileName;
+                }
+            }
+        }
+
+        return $list;
     }
 
     /**
@@ -217,7 +255,7 @@ class GoogleDriveStorageAdapter
      */
     public function allFiles($directory = null)
     {
-
+        return $this->files($directory, true);
     }
 
     /**
@@ -229,7 +267,32 @@ class GoogleDriveStorageAdapter
      */
     public function directories($directory = null, $recursive = false)
     {
+        if(is_null($directory)) {
+            $directory = $this->config["root"];
+        }
 
+        $list = array();
+
+        $optParams = array(
+            'q' => sprintf("'%s' in parents and mimeType = '%s'", $directory, "application/vnd.google-apps.folder"),
+        );
+
+        $directories = $this->service->files->listFiles($optParams)->getFiles();
+
+        foreach($directories as $directory) {
+            $dirName = $directory->getId() !== $this->config["root"] ? $directory->getName() : "";
+            $list[$directory->getId()] = $dirName;
+            if($recursive) {
+                if(!empty($dirName)) {
+                    $dirName .= "/";
+                }
+                foreach($this->directories($directory->getId(), $recursive) as $dirId => $subDirectory) {
+                    $list[$dirId] = $dirName.$subDirectory;
+                }
+            }
+        }
+
+        return $list;
     }
 
     /**
@@ -240,7 +303,7 @@ class GoogleDriveStorageAdapter
      */
     public function allDirectories($directory = null)
     {
-
+        return $this->directories($directory, true);
     }
 
     /**
@@ -261,17 +324,6 @@ class GoogleDriveStorageAdapter
      * @return bool
      */
     public function deleteDirectory($directory)
-    {
-
-    }
-
-    /**
-     * Get the URL for the file at the given path.
-     *
-     * @param  string  $path
-     * @return string
-     */
-    public function url($path)
     {
 
     }
