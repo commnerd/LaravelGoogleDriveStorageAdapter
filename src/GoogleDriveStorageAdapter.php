@@ -209,33 +209,7 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function files($directory = null, $recursive = false)
     {
-        $path = $directory;
 
-        if(is_null($directory)) {
-            $directory = $this->config["root"];
-        }
-
-        $list = array();
-
-        $optParams = array(
-            'q' => sprintf("'%s' in parents and mimeType != '%s'", $directory, "application/vnd.google-apps.folder"),
-        );
-
-        $files = $this->service->files->listFiles($optParams)->getFiles();
-
-        foreach($files as $file) {
-            $list[$file->getId()] = $file->getName();
-        }
-
-        if($recursive) {
-            foreach(array_keys($this->directories($file->getId())) as $subDir) {
-                foreach($this->directories($subDir, true) as $fileKey => $fileName) {
-                    $list[$fileKey] = $subDir."/".$fileName;
-                }
-            }
-        }
-
-        return $list;
     }
 
     /**

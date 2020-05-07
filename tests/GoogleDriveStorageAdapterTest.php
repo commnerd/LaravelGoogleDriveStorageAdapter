@@ -46,11 +46,6 @@ class GoogleDriveStorageAdapterTest extends TestCase
         ], $this->adapter->directories());
     }
 
-    public function TestSubDirectory()
-    {
-        $this->assertTrue(true);
-    }
-
     public function testAllDirectories()
     {
         $this->driveService
@@ -77,7 +72,9 @@ class GoogleDriveStorageAdapterTest extends TestCase
                 ],
                 [
                     new TestFile("asdfjklldkjf", "foss"),
-                ]
+                ],
+                [],
+                []
             );
 
         $this->assertEquals([

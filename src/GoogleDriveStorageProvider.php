@@ -3,6 +3,7 @@
 namespace GoogleDriveStorage;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Config\Repository as Config;
 use Storage;
 
 class GoogleDriveStorageProvider extends ServiceProvider
@@ -12,42 +13,29 @@ class GoogleDriveStorageProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(Config $config)
     {
         // $this->publishes([
         //     __DIR__.'/../config/storage_google_drive.php' => config_path('storage_google_drive.php'),
         // ], 'config');
 
-        $config = [
+        $config["filesystems.disks.google_drive"] = [
             'driver' => 'google_drive',
-            'refresh_token' => null,
-            "client_id" => null,
-            "client_secret" => null,
-            "root" => null,
+            'refresh_token' => "blah",
+            "client_id" => "blah",
+            "client_secret" => "blah",
+            "root" => "blah",
         ];
 
-        app()->config["filesystems.disks.google_drive"] = $config;
+        $config["filesystems.default"] = "google_drive";
 
-        app()->config["filesystems.default"] = "google_drive";
+        $client = new GoogleClient;
 
-        $this->app->singleton(GoogleClient::class, function ($app) {
-            return new GoogleClient();
-        });
+        $service = new GoogleDriveService($client);
 
-        $this->app->singleton(GoogleDriveService::class, function ($app) {
-            return new GoogleDriveService($app->make(GoogleClient::class));
-        });
-
-        $storageAdapter = new GoogleDriveStorageAdapter(
-            app()->make(GoogleDriveService::class),
-            $config
-        );
+        $storageAdapter = new GoogleDriveStorageAdapter($service, $config);
 
         return Storage::extend('google_drive', function () use ($storageAdapter) {
-            return $storageAdapter;
-        });
-
-        $this->app->singleton(GoogleDriveStorageAdapter::class, function($app) use ($storageAdapter) {
             return $storageAdapter;
         });
     }

@@ -27,10 +27,12 @@ abstract class TestCase extends BaseTestCase
             "client_secret" => "qrs",
             "root" => "tuv",
         ];
+
+        app()->config["filesystems.disks.google_drive"] = $this->config;
     }
 
-    protected function getPackageProviders($app)
-    {
-        return [GoogleDriveStorageProvider::class];
-    }
+    // protected function getPackageProviders($app)
+    // {
+    //     return [GoogleDriveStorageProvider::class];
+    // }
 }
