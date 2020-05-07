@@ -18,13 +18,15 @@ class GoogleDriveStorageProvider extends ServiceProvider
         //     __DIR__.'/../config/storage_google_drive.php' => config_path('storage_google_drive.php'),
         // ], 'config');
 
-        app()->config["filesystems.disks.google_drive"] = [
+        $config = [
             'driver' => 'google_drive',
             'refresh_token' => null,
             "client_id" => null,
             "client_secret" => null,
             "root" => null,
         ];
+
+        app()->config["filesystems.disks.google_drive"] = $config;
 
         app()->config["filesystems.default"] = "google_drive";
 
@@ -36,11 +38,17 @@ class GoogleDriveStorageProvider extends ServiceProvider
             return new GoogleDriveService($app->make(GoogleClient::class));
         });
 
-        Storage::extend('google_drive', function () {
-            return new GoogleDriveStorageAdapter(
-                app()->make(GoogleDriveService::class),
-                app()->config
-            );
+        $storageAdapter = new GoogleDriveStorageAdapter(
+            app()->make(GoogleDriveService::class),
+            $config
+        );
+
+        return Storage::extend('google_drive', function () use ($storageAdapter) {
+            return $storageAdapter;
+        });
+
+        $this->app->singleton(GoogleDriveStorageAdapter::class, function($app) use ($storageAdapter) {
+            return $storageAdapter;
         });
     }
 }
