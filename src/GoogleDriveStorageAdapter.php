@@ -12,7 +12,6 @@ class GoogleDriveStorageAdapter implements Filesystem
     const FILES_CACHE_KEY = "storage_google_drive_files_map";
 
     private $directoryMap = [];
-    private $fileMap = [];
     private $service;
     private $config;
 
@@ -21,8 +20,7 @@ class GoogleDriveStorageAdapter implements Filesystem
         $this->config = $config;
         $this->service = $service;
 
-        $this->directoryMap = [];
-        // $this->fileMap = Cache::get(self::FILES_CACHE_KEY) ?? [];
+        $this->directoryMap = Cache::get(self::DIRECTORY_CACHE_KEY) ?? [];
     }
 
     /**
@@ -46,7 +44,9 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function get($path)
     {
-
+        $fileId = $this->getFileId($path);
+        $content = $service->files->get($fileId, array("alt" => "media"));  // Added
+        print $content->getBody();
     }
 
     /**
@@ -150,7 +150,14 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function delete($paths)
     {
-
+        $success = true;
+        if(is_array($paths)) {
+            foreach($paths as $path) {
+                $success = $success && $this->delete($path);
+            }
+        }
+        $fileId = $this->getFileId($paths);
+        $this->service->files->delete($fileId);
     }
 
     /**
@@ -211,7 +218,16 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function files($directory = null, $recursive = false)
     {
-
+        $fileList = array();
+        $dirId = $this->getDirId($directory);
+        $this->buildFilesList($dirId);
+        if($recursive) {
+            foreach($this->allDirectories($directory) as $dirId => $dirPath) {
+                foreach($this->buildFileList($dirId) as $fileName) {
+                    $fileList[] = "$dirPath/$fileName";
+                }
+            }
+        }
     }
 
     /**
@@ -238,7 +254,7 @@ class GoogleDriveStorageAdapter implements Filesystem
             $directory = "/";
         }
 
-        $dirId = $this->getDirPathId($directory);
+        $dirId = $this->getDirId($directory);
         $this->directoryMap[$directory] = $dirId;
         $list[$dirId] = $directory;
 
@@ -277,7 +293,13 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function makeDirectory($path)
     {
+        $file = new \Google_Service_Drive_DriveFile();
+        $file->setName('Folder Name');
+        $file->setMimeType('application/vnd.google-apps.folder');
 
+        $this->service->files->create($file);
+
+        return true;
     }
 
     /**
@@ -288,10 +310,20 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function deleteDirectory($directory)
     {
-
+        $dirId = $this->getDirId($directory);
+        $this->service->files->delete($dirId);
     }
 
-    private function getDirPathId($path)
+    private function getFileId($path, $fileName = null)
+    {
+        if(is_null($fileName)) {
+            return $this->getFileId(dirname($path), basename($path));
+        }
+
+        $dirId = $this->getDirId($path);
+    }
+
+    private function getDirId($path)
     {
         if($path === "/" || $path === ".") {
             return $this->config["root"];
@@ -303,7 +335,7 @@ class GoogleDriveStorageAdapter implements Filesystem
 
         $relativePath = basename($path);
         $parentPath = dirname($path);
-        $parentPathId = $this->getDirPathId($parentPath);
+        $parentPathId = $this->getDirId($parentPath);
 
         foreach($this->buildDirectoryList($parentPathId) as $childDirId => $childDirName) {
             if($relativePath === $childDirName) {
@@ -314,9 +346,27 @@ class GoogleDriveStorageAdapter implements Filesystem
         return null;
     }
 
+    private function buildFileList($dirId)
+    {
+        $list = array();
+
+        $optParams = array(
+            'q' => sprintf("'%s' in parents and mimeType != '%s'", $dirId, "application/vnd.google-apps.folder"),
+        );
+
+        $files = $this->service->files->listFiles($optParams)->getFiles();
+
+        if(!empty($files)) {
+            foreach($files as $file) {
+                $list[$dirId . " " . $file->getId()] = $file->getName();
+            }
+        }
+
+        return $list;
+    }
+
     private function buildDirectoryList($dirId)
     {
-        dump($dirId);
         $list = array();
 
         $optParams = array(
@@ -332,5 +382,10 @@ class GoogleDriveStorageAdapter implements Filesystem
         }
 
         return $list;
+    }
+
+    private function writeCache()
+    {
+        Cache::put(self::DIRECTORY_CACHE_KEY, $this->directoryMap);
     }
 }
