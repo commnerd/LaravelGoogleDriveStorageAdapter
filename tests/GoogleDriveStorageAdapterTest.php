@@ -89,7 +89,7 @@ class GoogleDriveStorageAdapterTest extends TestCase
         ], $this->adapter->allDirectories());
     }
 
-    public function testSubDirectory()
+    public function testAllSubDirectory()
     {
         $this->driveService
         ->method('getFiles')
@@ -109,9 +109,9 @@ class GoogleDriveStorageAdapterTest extends TestCase
             []
         );
 
-    $this->assertEquals([
-        "lkjsdfasdffa" => "biz/faz/fizz",
-        "asdfjklldkjf" => "biz/faz/fizz/foss",
-    ], $this->adapter->directories("biz/faz"));
+        $this->assertEquals([
+            "lkjsdfasdffa" => "biz/faz/fizz",
+            "asdfjklldkjf" => "biz/faz/fizz/foss",
+        ], $this->adapter->allDirectories("biz/faz", true));
     }
 }

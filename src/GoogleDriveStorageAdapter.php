@@ -206,7 +206,8 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function lastModified($path)
     {
-
+        $fileDef = $this->getFileDefinition($path);
+        return $fileDef->getModifiedDate();
     }
 
     /**
@@ -251,27 +252,28 @@ class GoogleDriveStorageAdapter implements Filesystem
     public function directories($directory = null, $recursive = false)
     {
         if(is_null($directory)) {
-            $directory = "/";
+            $directory = ".";
         }
 
         $dirId = $this->getDirId($directory);
-        $this->directoryMap[$directory] = $dirId;
-        $list[$dirId] = $directory;
 
         $list = $this->buildDirectoryList($dirId);
+        $dfsList = array();
 
         foreach($list as $dirId => $dirName) {
-            if($directory !== "/") {
+            if($directory !== ".") {
                 $dirName = "$directory/$dirName";
             }
+            $this->directoryMap[$dirName] = $dirId;
+            $dfsList[$dirId] = $dirName;
             if($recursive) {
                 foreach($this->directories($dirName, $recursive) as $subDirId => $subDirName) {
-                    $list[$subDirId] = "$dirName/$subDirName";
+                    $dfsList[$subDirId] = "$subDirName";
                 }
             }
         }
 
-        return $list;
+        return $dfsList;
     }
 
     /**
@@ -314,18 +316,25 @@ class GoogleDriveStorageAdapter implements Filesystem
         $this->service->files->delete($dirId);
     }
 
-    private function getFileId($path, $fileName = null)
+    private function getFileId($path) {
+        $fileDef = $this->getFileDefinition($path);
+        return $fileDef->getId();
+    }
+
+    private function getFileDefinition($path, $fileName = null)
     {
         if(is_null($fileName)) {
             return $this->getFileId(dirname($path), basename($path));
         }
 
         $dirId = $this->getDirId($path);
+
+
     }
 
     private function getDirId($path)
     {
-        if($path === "/" || $path === ".") {
+        if($path == ".") {
             return $this->config["root"];
         }
 
@@ -336,8 +345,9 @@ class GoogleDriveStorageAdapter implements Filesystem
         $relativePath = basename($path);
         $parentPath = dirname($path);
         $parentPathId = $this->getDirId($parentPath);
+        $list = $this->buildDirectoryList($parentPathId);
 
-        foreach($this->buildDirectoryList($parentPathId) as $childDirId => $childDirName) {
+        foreach($list as $childDirId => $childDirName) {
             if($relativePath === $childDirName) {
                 return $childDirId;
             }
