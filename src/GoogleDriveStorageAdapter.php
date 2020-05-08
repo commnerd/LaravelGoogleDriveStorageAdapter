@@ -33,12 +33,7 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function exists($path)
     {
-        foreach($this->files() as $file) {
-            if($path === $file->getName()) {
-                return true;
-            }
-        }
-        return false;
+        return in_array($path, $this->files(dirname($path)));
     }
 
     /**
@@ -128,7 +123,9 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function prepend($path, $data)
     {
-
+        $fileData = $this->get($path);
+        $fileData = $data.$fileData;
+        $this->put($path, $fileData);
     }
 
     /**
@@ -140,7 +137,9 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function append($path, $data)
     {
-
+        $fileData = $this->get($path);
+        $fileData = $fileData.$data;
+        $this->put($path, $fileData);
     }
 
     /**
@@ -163,7 +162,8 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function copy($from, $to)
     {
-
+        $data = $this->get($from);
+        $this->put($to, $data);
     }
 
     /**
@@ -175,7 +175,9 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function move($from, $to)
     {
-
+        $data = $this->get($from);
+        $this->put($to, $data);
+        $this->delete($from);
     }
 
     /**
@@ -186,7 +188,7 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function size($path)
     {
-
+        return sizeof($this->get($path));
     }
 
     /**
@@ -236,65 +238,20 @@ class GoogleDriveStorageAdapter implements Filesystem
             $directory = "/";
         }
 
-        $dirId = $this->getCurrentDirPathId($directory);
+        $dirId = $this->getDirPathId($directory);
+        $this->directoryMap[$directory] = $dirId;
+        $list[$dirId] = $directory;
 
         $list = $this->buildDirectoryList($dirId);
 
         foreach($list as $dirId => $dirName) {
             if($directory !== "/") {
-                $dirName = "$dirName";
+                $dirName = "$directory/$dirName";
             }
-            $this->directoryMap[$dirName] = $dirId;
-
             if($recursive) {
                 foreach($this->directories($dirName, $recursive) as $subDirId => $subDirName) {
                     $list[$subDirId] = "$dirName/$subDirName";
                 }
-            }
-        }
-
-        return $list;
-    }
-
-    private function getCurrentDirPathId($path)
-    {
-        if(isset($this->directoryMap[$path])) {
-            return $this->directoryMap[$path];
-        }
-
-        if($path === "/") {
-            return $this->config["root"];
-        }
-
-        $subDirs = explode("/", $path);
-        $dirId = $this->config["root"];
-
-        while(!empty($subDirs)) {
-            $lastDirId = $dirId;
-            $targetDir = array_shift($subDirs);
-            $dirList = $this->buildDirectoryList($dirId);
-            foreach($dirList as $refId => $dirName) {
-                if($dirName === $targetDir) {
-                    $dirId = $refId;
-                }
-            }
-        }
-        return $dirId;
-    }
-
-    private function buildDirectoryList($dirId)
-    {
-        $list = array();
-
-        $optParams = array(
-            'q' => sprintf("'%s' in parents and mimeType = '%s'", $dirId, "application/vnd.google-apps.folder"),
-        );
-
-        $files = $this->service->files->listFiles($optParams)->getFiles();
-
-        if(!empty($files)) {
-            foreach($files as $file) {
-                $list[$file->getId()] = $file->getName();
             }
         }
 
@@ -332,5 +289,48 @@ class GoogleDriveStorageAdapter implements Filesystem
     public function deleteDirectory($directory)
     {
 
+    }
+
+    private function getDirPathId($path)
+    {
+        if($path === "/" || $path === ".") {
+            return $this->config["root"];
+        }
+
+        if(isset($this->directoryMap[$path])) {
+            return $this->directoryMap[$path];
+        }
+
+        $relativePath = basename($path);
+        $parentPath = dirname($path);
+        $parentPathId = $this->getDirPathId($parentPath);
+
+        foreach($this->buildDirectoryList($parentPathId) as $childDirId => $childDirName) {
+            if($relativePath === $childDirName) {
+                return $childDirId;
+            }
+        }
+
+        return null;
+    }
+
+    private function buildDirectoryList($dirId)
+    {
+        dump($dirId);
+        $list = array();
+
+        $optParams = array(
+            'q' => sprintf("'%s' in parents and mimeType = '%s'", $dirId, "application/vnd.google-apps.folder"),
+        );
+
+        $files = $this->service->files->listFiles($optParams)->getFiles();
+
+        if(!empty($files)) {
+            foreach($files as $file) {
+                $list[$file->getId()] = $file->getName();
+            }
+        }
+
+        return $list;
     }
 }

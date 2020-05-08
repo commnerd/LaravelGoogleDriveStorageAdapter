@@ -88,4 +88,30 @@ class GoogleDriveStorageAdapterTest extends TestCase
             "asdfjklldkjf" => "biz/faz/fizz/foss",
         ], $this->adapter->allDirectories());
     }
+
+    public function testSubDirectory()
+    {
+        $this->driveService
+        ->method('getFiles')
+        ->willReturnOnConsecutiveCalls(
+            [
+                new TestFile("lskdflsldjfa", "biz"),
+            ],
+            [
+                new TestFile("fjlskdjflskj", "faz"),
+            ],
+            [
+                new TestFile("lkjsdfasdffa", "fizz"),
+            ],
+            [
+                new TestFile("asdfjklldkjf", "foss"),
+            ],
+            []
+        );
+
+    $this->assertEquals([
+        "lkjsdfasdffa" => "biz/faz/fizz",
+        "asdfjklldkjf" => "biz/faz/fizz/foss",
+    ], $this->adapter->directories("biz/faz"));
+    }
 }
