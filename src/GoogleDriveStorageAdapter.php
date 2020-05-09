@@ -45,8 +45,7 @@ class GoogleDriveStorageAdapter implements Filesystem
     public function get($path)
     {
         $fileId = $this->getFileId($path);
-        $content = $service->files->get($fileId, array("alt" => "media"));  // Added
-        print $content->getBody();
+        return (string)$service->files->get($fileId, array("alt" => "media"))->getBody();
     }
 
     /**
@@ -59,7 +58,7 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function readStream($path)
     {
-
+        return $this->get($path);
     }
 
     /**
@@ -72,7 +71,27 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function put($path, $contents, $options = [])
     {
+        $fileName = basename($path);
+        $dirName = dirname($path);
 
+        $fileMetadata = new Google_Service_Drive_DriveFile(array(
+            'name' => $fileName,
+            'parents' => array($this->getDirId($dirName))
+        ));
+        $fileMetadata->setParents([$this->getDirId($dirName)]);
+
+        $file = $this->service->files->create($fileMetadata, array(
+            'data' => $contents,
+            'mimeType' => 'image/jpeg',
+            'uploadType' => 'multipart',
+            'fields' => 'id'));
+
+        if($file->id) {
+            return true;
+        }
+
+        return false;
+        // printf("File ID: %s\n", $file->id);
     }
 
     /**
@@ -88,7 +107,7 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function writeStream($path, $resource, array $options = [])
     {
-
+        $this->put($path, $resource, $options);
     }
 
     /**
