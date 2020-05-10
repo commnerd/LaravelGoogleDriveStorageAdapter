@@ -82,7 +82,6 @@ class GoogleDriveStorageAdapter implements Filesystem
 
         $file = $this->service->files->create($fileMetadata, array(
             'data' => $contents,
-            'mimeType' => 'image/jpeg',
             'uploadType' => 'multipart',
             'fields' => 'id'));
 
@@ -315,8 +314,9 @@ class GoogleDriveStorageAdapter implements Filesystem
     public function makeDirectory($path)
     {
         $file = new \Google_Service_Drive_DriveFile();
-        $file->setName('Folder Name');
+        $file->setName(basename($path));
         $file->setMimeType('application/vnd.google-apps.folder');
+        $file->setParents(array($this->getDirId(dirname($path))));
 
         $this->service->files->create($file);
 

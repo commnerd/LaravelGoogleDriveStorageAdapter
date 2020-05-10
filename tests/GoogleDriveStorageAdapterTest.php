@@ -92,26 +92,43 @@ class GoogleDriveStorageAdapterTest extends TestCase
     public function testAllSubDirectory()
     {
         $this->driveService
-        ->method('getFiles')
-        ->willReturnOnConsecutiveCalls(
-            [
-                new TestFile("lskdflsldjfa", "biz"),
-            ],
-            [
-                new TestFile("fjlskdjflskj", "faz"),
-            ],
-            [
-                new TestFile("lkjsdfasdffa", "fizz"),
-            ],
-            [
-                new TestFile("asdfjklldkjf", "foss"),
-            ],
-            []
-        );
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("lskdflsldjfa", "biz"),
+                ],
+                [
+                    new TestFile("fjlskdjflskj", "faz"),
+                ],
+                [
+                    new TestFile("lkjsdfasdffa", "fizz"),
+                ],
+                [
+                    new TestFile("asdfjklldkjf", "foss"),
+                ],
+                []
+            );
 
         $this->assertEquals([
             "lkjsdfasdffa" => "biz/faz/fizz",
             "asdfjklldkjf" => "biz/faz/fizz/foss",
         ], $this->adapter->allDirectories("biz/faz", true));
+    }
+
+    public function testFlatCachedSubdir()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturn([
+                new TestFile("jkl", "baz"),
+                new TestFile("pqr", "blah"),
+                new TestFile("stu", "bar"),
+            ]);
+
+        $this->assertEquals([
+            "jkl" => "biz/baz",
+            "pqr" => "biz/blah",
+            "stu" => "biz/bar",
+        ], $this->adapter->directories("biz"));
     }
 }
