@@ -176,4 +176,29 @@ class GoogleDriveStorageAdapterTest extends TestCase
             "def 103" => "baz/blah/bliz.txt",
         ], $this->adapter->allFiles());
     }
+
+    public function testSubdirFiles()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("def", "blah"),
+                ],
+                [
+                    new TestFile("789", "blah.txt"),
+                    new TestFile("102", "blaz.txt"),
+                    new TestFile("103", "bliz.txt"),
+                ]
+            );
+
+        $this->assertEquals([
+            "def 789" => "baz/blah/blah.txt",
+            "def 102" => "baz/blah/blaz.txt",
+            "def 103" => "baz/blah/bliz.txt",
+        ], $this->adapter->files("baz/blah"));
+    }
 }

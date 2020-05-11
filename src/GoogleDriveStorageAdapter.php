@@ -246,7 +246,7 @@ class GoogleDriveStorageAdapter implements Filesystem
         if($recursive) {
             foreach($this->allDirectories($directory) as $dirId => $dirPath) {
                 foreach($this->buildFilesList($dirId) as $fileId => $fileName) {
-                    $fileList[$fileId] = "$dirPath/$fileName";
+                    $fileList[$fileId] = "$fileName";
                 }
             }
         }
@@ -388,10 +388,15 @@ class GoogleDriveStorageAdapter implements Filesystem
         );
 
         $files = $this->service->files->listFiles($optParams)->getFiles();
+        $reverseDirMap = array_flip($this->directoryMap);
 
         if(!empty($files)) {
             foreach($files as $file) {
-                $list[$dirId . " " . $file->getId()] = $file->getName();
+                $filePath = $file->getName();
+                if($dirId !== $this->config["root"]) {
+                    $filePath = $reverseDirMap[$dirId]."/$filePath";
+                }
+                $list[$dirId . " " . $file->getId()] = $filePath;
             }
         }
 
