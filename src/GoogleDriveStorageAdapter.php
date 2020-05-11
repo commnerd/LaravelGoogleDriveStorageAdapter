@@ -245,8 +245,8 @@ class GoogleDriveStorageAdapter implements Filesystem
         $fileList = $this->buildFilesList($dirId);
         if($recursive) {
             foreach($this->allDirectories($directory) as $dirId => $dirPath) {
-                foreach($this->buildFilesList($dirId) as $fileName) {
-                    $fileList[] = "$dirPath/$fileName";
+                foreach($this->buildFilesList($dirId) as $fileId => $fileName) {
+                    $fileList[$fileId] = "$dirPath/$fileName";
                 }
             }
         }
@@ -295,6 +295,7 @@ class GoogleDriveStorageAdapter implements Filesystem
                 }
             }
         }
+        $this->writeCache();
 
         return $dfsList;
     }

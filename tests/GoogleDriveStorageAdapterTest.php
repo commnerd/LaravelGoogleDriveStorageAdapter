@@ -4,7 +4,6 @@ namespace Tests;
 
 use GoogleDriveStorage\GoogleDriveStorageAdapter;
 use GoogleDriveStorage\GoogleDriveService;
-use Illuminate\Support\Facades\Cache;
 
 class GoogleDriveStorageAdapterTest extends TestCase
 {
@@ -143,5 +142,38 @@ class GoogleDriveStorageAdapterTest extends TestCase
             "tuv lsdkfjlksdjf" => "blah.txt",
             "tuv jfsdkfjdljls" => "baz.txt",
         ], $this->adapter->files());
+    }
+
+    public function testAllFiles()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("123", "blah.txt"),
+                    new TestFile("456", "blaz.txt"),
+                ],
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("def", "blah"),
+                ],
+                [],
+                [],
+                [
+                    new TestFile("789", "blah.txt"),
+                    new TestFile("102", "blaz.txt"),
+                    new TestFile("103", "bliz.txt"),
+                ]
+            );
+
+        $this->assertEquals([
+            "tuv 123" => "blah.txt",
+            "tuv 456" => "blaz.txt",
+            "def 789" => "baz/blah/blah.txt",
+            "def 102" => "baz/blah/blaz.txt",
+            "def 103" => "baz/blah/bliz.txt",
+        ], $this->adapter->allFiles());
     }
 }
