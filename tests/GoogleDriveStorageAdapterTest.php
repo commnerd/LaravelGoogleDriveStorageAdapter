@@ -31,14 +31,12 @@ class GoogleDriveStorageAdapterTest extends TestCase
 
     public function testRootDirectory()
     {
-        $fileSetRoot = [
-            new TestFile("lsdkfjlksdjf", "blah"),
-            new TestFile("jfsdkfjdljls", "baz"),
-        ];
-
         $this->driveService
             ->method("getFiles")
-            ->willReturn($fileSetRoot);
+            ->willReturn([
+                new TestFile("lsdkfjlksdjf", "blah"),
+                new TestFile("jfsdkfjdljls", "baz"),
+            ]);
 
         $this->assertEquals([
             "lsdkfjlksdjf" => "blah",
@@ -112,10 +110,10 @@ class GoogleDriveStorageAdapterTest extends TestCase
         $this->assertEquals([
             "lkjsdfasdffa" => "biz/faz/fizz",
             "asdfjklldkjf" => "biz/faz/fizz/foss",
-        ], $this->adapter->allDirectories("biz/faz", true));
+        ], $this->adapter->allDirectories("biz/faz"));
     }
 
-    public function testFlatCachedSubdir()
+    public function testSubdir()
     {
         $this->driveService
             ->method('getFiles')
@@ -130,5 +128,20 @@ class GoogleDriveStorageAdapterTest extends TestCase
             "pqr" => "biz/blah",
             "stu" => "biz/bar",
         ], $this->adapter->directories("biz"));
+    }
+
+    public function testRootFiles()
+    {
+        $this->driveService
+            ->method("getFiles")
+            ->willReturn([
+                new TestFile("lsdkfjlksdjf", "blah.txt"),
+                new TestFile("jfsdkfjdljls", "baz.txt"),
+            ]);
+
+        $this->assertEquals([
+            "tuv lsdkfjlksdjf" => "blah.txt",
+            "tuv jfsdkfjdljls" => "baz.txt",
+        ], $this->adapter->files());
     }
 }

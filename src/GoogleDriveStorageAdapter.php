@@ -237,16 +237,21 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function files($directory = null, $recursive = false)
     {
+        if(is_null($directory)) {
+            $directory = ".";
+        }
         $fileList = array();
         $dirId = $this->getDirId($directory);
-        $this->buildFilesList($dirId);
+        $fileList = $this->buildFilesList($dirId);
         if($recursive) {
             foreach($this->allDirectories($directory) as $dirId => $dirPath) {
-                foreach($this->buildFileList($dirId) as $fileName) {
+                foreach($this->buildFilesList($dirId) as $fileName) {
                     $fileList[] = "$dirPath/$fileName";
                 }
             }
         }
+
+        return $fileList;
     }
 
     /**
@@ -275,7 +280,7 @@ class GoogleDriveStorageAdapter implements Filesystem
 
         $dirId = $this->getDirId($directory);
 
-        $list = $this->buildDirectoryList($dirId);
+        $list = $this->listSubdirs($dirId);
         $dfsList = array();
 
         foreach($list as $dirId => $dirName) {
@@ -353,7 +358,7 @@ class GoogleDriveStorageAdapter implements Filesystem
 
     private function getDirId($path)
     {
-        if($path == ".") {
+        if($path === ".") {
             return $this->config["root"];
         }
 
@@ -361,21 +366,19 @@ class GoogleDriveStorageAdapter implements Filesystem
             return $this->directoryMap[$path];
         }
 
-        $relativePath = basename($path);
         $parentPath = dirname($path);
-        $parentPathId = $this->getDirId($parentPath);
-        $list = $this->buildDirectoryList($parentPathId);
+        $list = $this->directories($parentPath);
 
-        foreach($list as $childDirId => $childDirName) {
-            if($relativePath === $childDirName) {
-                return $childDirId;
+        foreach($list as $subDirId => $subDirName) {
+            if($path === $subDirName) {
+                return $subDirId;
             }
         }
 
         return null;
     }
 
-    private function buildFileList($dirId)
+    private function buildFilesList($dirId)
     {
         $list = array();
 
@@ -394,7 +397,7 @@ class GoogleDriveStorageAdapter implements Filesystem
         return $list;
     }
 
-    private function buildDirectoryList($dirId)
+    private function listSubdirs($dirId)
     {
         $list = array();
 
