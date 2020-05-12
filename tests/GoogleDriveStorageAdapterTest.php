@@ -201,4 +201,110 @@ class GoogleDriveStorageAdapterTest extends TestCase
             "def 103" => "baz/blah/bliz.txt",
         ], $this->adapter->files("baz/blah"));
     }
+
+    public function testSubdirAllFiles()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("123", "blitz.txt"),
+                ],
+                [
+                    new TestFile("def", "blah"),
+                ],
+                [],
+                [
+                    new TestFile("789", "blah.txt"),
+                    new TestFile("102", "blaz.txt"),
+                    new TestFile("103", "bliz.txt"),
+                ]
+            );
+
+        $this->assertEquals([
+            "abc 123" => "baz/blitz.txt",
+            "def 789" => "baz/blah/blah.txt",
+            "def 102" => "baz/blah/blaz.txt",
+            "def 103" => "baz/blah/bliz.txt",
+        ], $this->adapter->allFiles("baz"));
+    }
+
+    public function testExistsInRoot()
+    {
+        $this->driveService
+        ->method('getFiles')
+        ->willReturn(
+            [
+                new TestFile("789", "blah.txt"),
+                new TestFile("102", "blaz.txt"),
+                new TestFile("103", "bliz.txt"),
+            ]
+        );
+
+        $this->assertTrue($this->adapter->exists("blaz.txt"));
+    }
+
+    public function testNotExistsInRoot()
+    {
+        $this->driveService
+        ->method('getFiles')
+        ->willReturn(
+            [
+                new TestFile("789", "blah.txt"),
+                new TestFile("102", "blaz.txt"),
+                new TestFile("103", "bliz.txt"),
+            ]
+        );
+
+        $this->assertTrue(!$this->adapter->exists("boz.txt"));
+    }
+
+    public function testExistsInSubdir()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("def", "blah"),
+                ],
+                [
+                    new TestFile("789", "blah.txt"),
+                    new TestFile("102", "blaz.txt"),
+                    new TestFile("103", "bliz.txt"),
+                ]
+            );
+
+        $this->assertTrue($this->adapter->exists("baz/blah/blaz.txt"));
+    }
+
+    public function testNotExistsInSubdir()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("def", "blah"),
+                ],
+                [
+                    new TestFile("789", "blah.txt"),
+                    new TestFile("102", "blaz.txt"),
+                    new TestFile("103", "bliz.txt"),
+                ]
+            );
+
+        $this->assertTrue(!$this->adapter->exists("baz/blah/boz.txt"));
+    }
+
+    public function testGet()
+    {
+
 }

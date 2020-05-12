@@ -45,7 +45,7 @@ class GoogleDriveStorageAdapter implements Filesystem
     public function get($path)
     {
         $fileId = $this->getFileId($path);
-        return (string)$service->files->get($fileId, array("alt" => "media"))->getBody();
+        return $service->files->get($fileId, array("alt" => "media"))->getBody();
     }
 
     /**
@@ -244,7 +244,7 @@ class GoogleDriveStorageAdapter implements Filesystem
         $dirId = $this->getDirId($directory);
         $fileList = $this->buildFilesList($dirId);
         if($recursive) {
-            foreach($this->allDirectories($directory) as $dirId => $dirPath) {
+            foreach(array_keys($this->allDirectories($directory)) as $dirId) {
                 foreach($this->buildFilesList($dirId) as $fileId => $fileName) {
                     $fileList[$fileId] = "$fileName";
                 }
