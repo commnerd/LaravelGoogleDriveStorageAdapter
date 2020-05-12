@@ -21,4 +21,9 @@ class TestFile {
     {
         return $this->path;
     }
+
+    public function getBody()
+    {
+        return "This is a test.";
+    }
 }

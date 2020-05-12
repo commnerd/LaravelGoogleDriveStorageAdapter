@@ -15,7 +15,7 @@ class GoogleDriveStorageAdapterTest extends TestCase
 
         $this->driveService = $this->getMockBuilder(GoogleDriveService::class)
             ->disableOriginalConstructor()
-            ->setMethods(["listFiles", "getFiles"])
+            ->setMethods(["listFiles", "getFiles", "get", "create"])
             ->getMock();
 
         $this->driveService->files = $this->driveService;
@@ -23,6 +23,14 @@ class GoogleDriveStorageAdapterTest extends TestCase
         $this->driveService
             ->method("listFiles")
             ->willReturn($this->driveService);
+
+        $this->driveService
+            ->method("get")
+            ->willReturn(new TestFile("", ""));
+
+        $this->driveService
+            ->method("create")
+            ->willReturn(new TestFile("a1b2c3", "dummy.txt"));
 
         $this->adapter = new GoogleDriveStorageAdapter($this->driveService, $this->config);
 
@@ -116,11 +124,15 @@ class GoogleDriveStorageAdapterTest extends TestCase
     {
         $this->driveService
             ->method('getFiles')
-            ->willReturn([
-                new TestFile("jkl", "baz"),
-                new TestFile("pqr", "blah"),
-                new TestFile("stu", "bar"),
-            ]);
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("lskdflsldjfa", "biz"),
+                ],
+                [
+                    new TestFile("jkl", "baz"),
+                    new TestFile("pqr", "blah"),
+                    new TestFile("stu", "bar"),
+                ]);
 
         $this->assertEquals([
             "jkl" => "biz/baz",
@@ -306,5 +318,90 @@ class GoogleDriveStorageAdapterTest extends TestCase
 
     public function testGet()
     {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("def", "blah"),
+                ],
+                [
+                    new TestFile("102", "blaz.txt"),
+                ]
+            );
 
+        $this->assertEquals("This is a test.", $this->adapter->get("baz/blah/blaz.txt"));
+    }
+
+    public function testReadStream()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("def", "blah"),
+                ],
+                [
+                    new TestFile("102", "blaz.txt"),
+                ]
+            );
+
+        $this->assertEquals("This is a test.", $this->adapter->readStream("baz/blah/blaz.txt"));
+    }
+
+    public function testPut()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("def", "blah"),
+                ],
+                [
+                    new TestFile("102", "blaz.txt"),
+                ]
+            );
+
+        $this->assertTrue($this->adapter->put("baz/blah/blaz.txt", "some information"));
+    }
+
+    public function testFailedPut()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("102", "blaz.txt"),
+                ]
+            );
+
+        $this->assertTrue(!$this->adapter->put("baz/blah/blaz.txt", "some information"));
+    }
+
+    public function testWriteStream()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("def", "blah"),
+                ],
+                [
+                    new TestFile("102", "blaz.txt"),
+                ]
+            );
+
+        $this->assertTrue($this->adapter->writeStream("baz/blah/blaz.txt", "some information"));
+    }
 }

@@ -5,6 +5,7 @@ namespace GoogleDriveStorage;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Cache;
+use Symfony\Component\Filesystem\Exception\FileNotFoundException as ExceptionFileNotFoundException;
 
 class GoogleDriveStorageAdapter implements Filesystem
 {
@@ -45,7 +46,7 @@ class GoogleDriveStorageAdapter implements Filesystem
     public function get($path)
     {
         $fileId = $this->getFileId($path);
-        return $service->files->get($fileId, array("alt" => "media"))->getBody();
+        return $this->service->files->get($fileId, array("alt" => "media"))->getBody();
     }
 
     /**
@@ -74,23 +75,27 @@ class GoogleDriveStorageAdapter implements Filesystem
         $fileName = basename($path);
         $dirName = dirname($path);
 
-        $fileMetadata = new Google_Service_Drive_DriveFile(array(
-            'name' => $fileName,
-            'parents' => array($this->getDirId($dirName))
-        ));
-        $fileMetadata->setParents([$this->getDirId($dirName)]);
+        try {
+            $fileMetadata = new \Google_Service_Drive_DriveFile(array(
+                'name' => $fileName,
+                'parents' => array($this->getDirId($dirName))
+            ));
 
-        $file = $this->service->files->create($fileMetadata, array(
-            'data' => $contents,
-            'uploadType' => 'multipart',
-            'fields' => 'id'));
+            $file = $this->service->files->create($fileMetadata, array(
+                'data' => $contents,
+                'uploadType' => 'multipart',
+                'fields' => 'id'));
 
-        if($file->id) {
-            return true;
+            if($file->getId()) {
+                return true;
+            }
+        }
+        catch(FileNotFoundException $e) {
+            // Do nothing
         }
 
+
         return false;
-        // printf("File ID: %s\n", $file->id);
     }
 
     /**
@@ -106,7 +111,7 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function writeStream($path, $resource, array $options = [])
     {
-        $this->put($path, $resource, $options);
+        return $this->put($path, $resource, $options);
     }
 
     /**
@@ -279,6 +284,9 @@ class GoogleDriveStorageAdapter implements Filesystem
         }
 
         $dirId = $this->getDirId($directory);
+        if(is_null($dirId)) {
+            throw new FileNotFoundException($directory);
+        }
 
         $list = $this->listSubdirs($dirId);
         $dfsList = array();
@@ -349,12 +357,11 @@ class GoogleDriveStorageAdapter implements Filesystem
     private function getFileDefinition($path, $fileName = null)
     {
         if(is_null($fileName)) {
-            return $this->getFileId(dirname($path), basename($path));
+            return $this->getFileDefinition(dirname($path), basename($path));
         }
 
         $dirId = $this->getDirId($path);
-
-
+        return $this->retrieveFileDef($dirId, $fileName);
     }
 
     private function getDirId($path)
@@ -401,6 +408,26 @@ class GoogleDriveStorageAdapter implements Filesystem
         }
 
         return $list;
+    }
+
+    private function retrieveFileDef($dirId, $fileName)
+    {
+        $optParams = array(
+            'q' => sprintf("'%s' in parents and mimeType != '%s' and name = '%s'",
+                $dirId,
+                "application/vnd.google-apps.folder",
+                $fileName
+            ),
+        );
+
+        $files = $this->service->files->listFiles($optParams)->getFiles();
+        $reverseDirMap = array_flip($this->directoryMap);
+
+        if(empty($files)) {
+            throw new ExceptionFileNotFoundException($fileName);
+        }
+
+        return $files[0];
     }
 
     private function listSubdirs($dirId)
