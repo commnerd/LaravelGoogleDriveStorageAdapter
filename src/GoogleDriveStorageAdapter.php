@@ -90,8 +90,8 @@ class GoogleDriveStorageAdapter implements Filesystem
                 return true;
             }
         }
-        catch(FileNotFoundException $e) {
-            // Do nothing
+        catch(\Exception $e) {
+            // TODO remove directory from directoryMap
         }
 
 
@@ -146,9 +146,20 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function prepend($path, $data)
     {
-        $fileData = $this->get($path);
-        $fileData = $data.$fileData;
-        $this->put($path, $fileData);
+        try {
+            $emptyFile = new \Google_Service_Drive_DriveFile();
+            $fileId = $this->getFileId($path);
+            $fileData = $this->get($path);
+            $fileData = $data.$fileData;
+            $this->service->files->update($fileId, $emptyFile, array(
+                'data' => $fileData,
+                'uploadType' => 'multipart'
+            ));
+            return true;
+        } catch (Exception $e) {
+            // Do nothing
+        }
+        return false;
     }
 
     /**
@@ -160,9 +171,20 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function append($path, $data)
     {
-        $fileData = $this->get($path);
-        $fileData = $fileData.$data;
-        $this->put($path, $fileData);
+        try {
+            $emptyFile = new \Google_Service_Drive_DriveFile();
+            $fileId = $this->getFileId($path);
+            $fileData = $this->get($path);
+            $fileData = $fileData.$data;
+            $this->service->files->update($fileId, $emptyFile, array(
+                'data' => $fileData,
+                'uploadType' => 'multipart'
+            ));
+            return true;
+        } catch (Exception $e) {
+            // Do nothing
+        }
+        return false;
     }
 
     /**
@@ -173,14 +195,22 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function delete($paths)
     {
-        $success = true;
         if(is_array($paths)) {
+            $success = true;
             foreach($paths as $path) {
                 $success = $success && $this->delete($path);
             }
+            return $success;
         }
-        $fileId = $this->getFileId($paths);
-        $this->service->files->delete($fileId);
+
+        try {
+            $fileId = $this->getFileId($paths);
+            return (bool)$this->service->files->delete($fileId);
+        }
+        catch (\Exception $e) {
+            // Do nothing
+        }
+        return false;
     }
 
     /**
@@ -192,8 +222,15 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function copy($from, $to)
     {
-        $data = $this->get($from);
-        $this->put($to, $data);
+        $copiedFile = new Google_Service_Drive_DriveFile();
+        $copiedFile->setParents([$this->getDirId(dirname($to))]);
+        $copiedFile->setTitle(basename($to));
+        try {
+          return (bool)$service->files->copy($this->getFileId($from), $copiedFile);
+        } catch (\Exception $e) {
+            // Do nothing
+        }
+        return false;
     }
 
     /**
@@ -205,9 +242,15 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function move($from, $to)
     {
-        $data = $this->get($from);
-        $this->put($to, $data);
-        $this->delete($from);
+        $copiedFile = new Google_Service_Drive_DriveFile();
+        $copiedFile->setParents([$this->getDirId(dirname($to))]);
+        $copiedFile->setTitle(basename($to));
+        try {
+          return (bool)$service->files->copy($this->getFileId($from), $copiedFile);
+        } catch (\Exception $e) {
+            // Do nothing
+        }
+        return false;
     }
 
     /**

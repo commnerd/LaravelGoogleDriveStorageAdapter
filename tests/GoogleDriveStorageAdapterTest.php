@@ -15,7 +15,7 @@ class GoogleDriveStorageAdapterTest extends TestCase
 
         $this->driveService = $this->getMockBuilder(GoogleDriveService::class)
             ->disableOriginalConstructor()
-            ->setMethods(["listFiles", "getFiles", "get", "create"])
+            ->setMethods(["listFiles", "getFiles", "get", "create", "update", "delete"])
             ->getMock();
 
         $this->driveService->files = $this->driveService;
@@ -30,6 +30,14 @@ class GoogleDriveStorageAdapterTest extends TestCase
 
         $this->driveService
             ->method("create")
+            ->willReturn(new TestFile("a1b2c3", "dummy.txt"));
+
+        $this->driveService
+            ->method("update")
+            ->willReturn(new TestFile("a1b2c3", "dummy.txt"));
+
+        $this->driveService
+            ->method("delete")
             ->willReturn(new TestFile("a1b2c3", "dummy.txt"));
 
         $this->adapter = new GoogleDriveStorageAdapter($this->driveService, $this->config);
@@ -403,5 +411,86 @@ class GoogleDriveStorageAdapterTest extends TestCase
             );
 
         $this->assertTrue($this->adapter->writeStream("baz/blah/blaz.txt", "some information"));
+    }
+
+    public function testPrepend()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("def", "blah"),
+                ],
+                [
+                    new TestFile("102", "blaz.txt"),
+                ],
+                [
+                    new TestFile("", ""),
+                ],
+            );
+
+        $this->assertTrue($this->adapter->prepend("baz/blah/blaz.txt", "some information"));
+    }
+
+    public function testAppend()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("def", "blah"),
+                ],
+                [
+                    new TestFile("102", "blaz.txt"),
+                ],
+                [
+                    new TestFile("", ""),
+                ]
+            );
+
+        $this->assertTrue($this->adapter->append("baz/blah/blaz.txt", "some information"));
+    }
+
+    public function testDeleteSingleFile()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("abc", "baz"),
+                ],
+                [
+                    new TestFile("102", "blah.txt"),
+                ]
+            );
+        $this->assertTrue($this->adapter->delete("baz/blah.txt"));
+    }
+
+    public function testDeleteArrayOfFiles()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("foo.txt", "100"),
+                ],
+                [
+                    new TestFile("baz", "abc"),
+                ],
+                [
+                    new TestFile("102", "blah.txt"),
+                ]
+            );
+
+        $this->assertTrue($this->adapter->delete([
+            "foo.txt",
+            "baz/blah.txt",
+        ]));
     }
 }

@@ -26,4 +26,9 @@ class TestFile {
     {
         return "This is a test.";
     }
+
+    public function getSize()
+    {
+        return sizeof($this->getBody());
+    }
 }
