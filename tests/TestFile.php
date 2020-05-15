@@ -2,7 +2,6 @@
 
 namespace Tests;
 
-
 class TestFile {
     private $id;
     private $path;
@@ -29,6 +28,11 @@ class TestFile {
 
     public function getSize()
     {
-        return sizeof($this->getBody());
+        return strlen($this->getBody());
+    }
+
+    public function getModifiedDate()
+    {
+        return 12345;
     }
 }

@@ -15,7 +15,7 @@ class GoogleDriveStorageAdapterTest extends TestCase
 
         $this->driveService = $this->getMockBuilder(GoogleDriveService::class)
             ->disableOriginalConstructor()
-            ->setMethods(["listFiles", "getFiles", "get", "create", "update", "delete"])
+            ->setMethods(["listFiles", "getFiles", "get", "create", "update", "delete", "copy"])
             ->getMock();
 
         $this->driveService->files = $this->driveService;
@@ -38,6 +38,10 @@ class GoogleDriveStorageAdapterTest extends TestCase
 
         $this->driveService
             ->method("delete")
+            ->willReturn(new TestFile("a1b2c3", "dummy.txt"));
+
+        $this->driveService
+            ->method("copy")
             ->willReturn(new TestFile("a1b2c3", "dummy.txt"));
 
         $this->adapter = new GoogleDriveStorageAdapter($this->driveService, $this->config);
@@ -492,5 +496,63 @@ class GoogleDriveStorageAdapterTest extends TestCase
             "foo.txt",
             "baz/blah.txt",
         ]));
+    }
+
+    public function testCopy()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("baz", "abc"),
+                ],
+                [
+                    new TestFile("baz", "abc"),
+                ],
+                [
+                    new TestFile("102", "blah.txt"),
+                ]
+            );
+
+        $this->assertTrue($this->adapter->copy("baz/blah.txt", "baz/biz.txt"));
+    }
+
+    public function testMove()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("102", "blah.txt"),
+                ]
+            );
+
+        $this->assertTrue($this->adapter->move("blah.txt", "biz.txt"));
+    }
+
+    public function testSize()
+    {
+        $this->driveService
+            ->method('getFiles')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    new TestFile("102", "blah.txt"),
+                ]
+            );
+
+        $this->assertEquals(strlen("This is a test."), $this->adapter->size("blah.txt"));
+    }
+
+    public function testLastModified()
+    {
+        $this->driveService
+        ->method('getFiles')
+        ->willReturnOnConsecutiveCalls(
+            [
+                new TestFile("102", "blah.txt"),
+            ]
+        );
+
+        $this->assertEquals(12345, $this->adapter->lastModified("blah.txt"));
     }
 }

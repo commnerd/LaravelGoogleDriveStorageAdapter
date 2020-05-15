@@ -222,14 +222,14 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function copy($from, $to)
     {
-        $copiedFile = new Google_Service_Drive_DriveFile();
-        $copiedFile->setParents([$this->getDirId(dirname($to))]);
-        $copiedFile->setTitle(basename($to));
-        try {
-          return (bool)$service->files->copy($this->getFileId($from), $copiedFile);
-        } catch (\Exception $e) {
+        $copiedFile = new \Google_Service_Drive_DriveFile();
+        // try {
+            $copiedFile->setParents([$this->getDirId(dirname($to))]);
+            $copiedFile->setName(basename($to));
+            return (bool)$this->service->files->copy($this->getFileId($from), $copiedFile);
+        // } catch (\Exception $e) {
             // Do nothing
-        }
+        // }
         return false;
     }
 
@@ -242,11 +242,11 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function move($from, $to)
     {
-        $copiedFile = new Google_Service_Drive_DriveFile();
-        $copiedFile->setParents([$this->getDirId(dirname($to))]);
-        $copiedFile->setTitle(basename($to));
+        $copiedFile = new \Google_Service_Drive_DriveFile();
         try {
-          return (bool)$service->files->copy($this->getFileId($from), $copiedFile);
+            $copiedFile->setParents([$this->getDirId(dirname($to))]);
+            $copiedFile->setName(basename($to));
+            return (bool)$this->service->files->copy($this->getFileId($from), $copiedFile);
         } catch (\Exception $e) {
             // Do nothing
         }
@@ -261,7 +261,8 @@ class GoogleDriveStorageAdapter implements Filesystem
      */
     public function size($path)
     {
-        return sizeof($this->get($path));
+        $fileDef = $this->getFileDefinition($path);
+        return $fileDef->getSize();
     }
 
     /**
