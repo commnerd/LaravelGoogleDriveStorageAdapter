@@ -21,6 +21,7 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->config = [
+            "force_default" => true,
             "driver" => "google_drive",
             "refresh_token" => "abcdefg",
             "client_id" => "hijklmnop",
@@ -30,9 +31,4 @@ abstract class TestCase extends BaseTestCase
 
         app()->config["filesystems.disks.google_drive"] = $this->config;
     }
-
-    // protected function getPackageProviders($app)
-    // {
-    //     return [GoogleDriveStorageProvider::class];
-    // }
 }
